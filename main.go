@@ -10,15 +10,27 @@ import (
 	"github.com/tsureshkumar/simple-swagger-doc/myerr"
 )
 
+func usage() {
+	fmt.Printf("Usage: %s openapi-schema.json\n", os.Args[0])
+}
+
 func main() {
 
 	formats.Register("md", markdown.NewFormatter)
 
-	// FIXME: validate arguments
+	// validate cmd line args
+	if len(os.Args) <= 1 {
+		usage()
+		os.Exit(1)
+	}
+
+	// load json file into models
 	doc, err := models.LoadJson(os.Args[1])
 	if err != nil {
 		panic(err)
 	}
+
+	// output markdown
 	markdown, err := formats.GetService("md")
 	if err != nil {
 		fmt.Println(myerr.Wrap(err, "service error"))

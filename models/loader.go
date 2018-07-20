@@ -42,6 +42,9 @@ func checkSchemaVersion(content string) (string, string, error) {
 	return model, version, nil
 }
 
+// Loads given json file into Swagger or OpenAPI models. Checks the schema
+// version of the file and loads appropriate models for later processing.
+// Retruns error if schema is not "swagger: 2.0" or "openapi: 3.0.[01]".
 func LoadJson(filename string) (*Document, error) {
 	content, err := loadContent(filename)
 	if err != nil {

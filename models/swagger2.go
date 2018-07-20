@@ -56,6 +56,11 @@ type Operation struct {
 	Schemes     []string            `json:"schemes,omitempty"`
 	Deprecated  bool                `json:"deprecated,omitempty"`
 	//Security   string   `json:"security,omitempty"`
+
+	//openapi
+	RequestBody *RequestBody `json:"requestBody"`
+	Callbacks   string       `json:"callbacks"`
+	Servers     []Server     `json:"servers"`
 }
 
 type Ref struct {
@@ -122,7 +127,7 @@ type Schema struct {
 	Enum             []string           `json:"enum"`
 	Type             string             `json:"type"`
 	Items            Items              `json:"items"`
-	AllOf            string             `json:"allOf"`
+	AllOf            []*Schema          `json:"allOf"`
 	Properties       map[string]*Schema `json:"properties"`
 	//AdditionalProperties string             `json:"additionalProperties"`
 	Discriminator string `json:"discriminator"`
@@ -138,6 +143,9 @@ type Response struct {
 	Schema      *Schema                `json:"schema,omitempty"`
 	Headers     map[string]Header      `json:"headers,omitempty"`
 	Examples    map[string]interface{} `json:"examples,omitempty"`
+
+	// openapi
+	Content map[string]*MediaType `json:"content,omitempty"`
 }
 
 type Header struct {
