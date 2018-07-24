@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -90,9 +91,15 @@ func printInputParams(op *models.Operation) {
 	for _, param := range op.Parameters {
 		if param.Ref == nil {
 			typeRef := param.Type
-			if typeRef == "" && param.Schema != nil &&
-				param.Schema.Ref != nil {
-				typeRef = fmt.Sprintf("<a href='%s'>%s<a>", param.Schema.Ref.Ref, strings.Replace(param.Schema.Ref.Ref, "#/definitions/", "", 1))
+			if typeRef == "" && param.Schema != nil {
+				typeRef = param.Schema.Type
+				if param.Schema.Ref != nil {
+					typeRef = fmt.Sprintf("<a href='%s'>%s<a>", param.Schema.Ref.Ref,
+						strings.Replace(param.Schema.Ref.Ref, "#/definitions/", "", 1))
+				}
+				if len(param.Schema.Enum) != 0 {
+					typeRef += "<br> [" + strings.Join(param.Schema.Enum, ",") + "]"
+				}
 			}
 			fmt.Printf("| %s | %s | %s | %s |\n",
 				param.Name,
@@ -114,18 +121,24 @@ func printResponses(doc *models.Document, op *models.Operation) {
 		fmt.Printf("|%s|\n", strings.Join(util.Map(headers, func(x string) string { return "-" }), "-|-"))
 		for k, resp := range op.Responses {
 			var typeRef = ""
-			if resp.Schema != nil && resp.Schema.Ref != nil {
-				typeRef = fmt.Sprintf("<a href='%s'>%s<a>", resp.Schema.Ref.Ref, strings.Replace(resp.Schema.Ref.Ref, "#/definitions/", "", 1))
+			if resp.Schema != nil {
+				if resp.Schema.Ref != nil {
+					typeRef = fmt.Sprintf("<a href='%s'>%s<a>", resp.Schema.Ref.Ref, strings.Replace(resp.Schema.Ref.Ref, "#/definitions/", "", 1))
+				} else {
+					var sb strings.Builder
+					printSchema(doc, "", resp.Schema, &sb, 1)
+					typeRef = sb.String()
+				}
 			}
 			fmt.Printf("| %s | %s | %s |\n",
 				k, typeRef, resp.Description)
 		}
 	} else {
-		printOpenAPIResponses(op)
+		printOpenAPIResponses(doc, op)
 	}
 }
 
-func printOpenAPIResponses(op *models.Operation) {
+func printOpenAPIResponses(doc *models.Document, op *models.Operation) {
 	headers := []string{"Code", "Content Type", "Data", "Description"}
 	fmt.Printf("\n| %s |\n", strings.Join(headers, " | "))
 	fmt.Printf("|%s|\n", strings.Join(util.Map(headers, func(x string) string { return "-" }), "-|-"))
@@ -135,8 +148,18 @@ func printOpenAPIResponses(op *models.Operation) {
 		}
 		for cv, content := range resp.Content {
 			var typeRef = ""
-			if content.Schema != nil && content.Schema.Ref != nil {
-				typeRef = fmt.Sprintf("<a href='%s'>%s<a>", content.Schema.Ref.Ref, strings.Replace(content.Schema.Ref.Ref, "#/components/schemas/", "", 1))
+			if content.Schema != nil {
+				if content.Schema.Ref != nil {
+					typeRef = fmt.Sprintf("<a href='%s'>%s<a>", content.Schema.Ref.Ref, strings.Replace(content.Schema.Ref.Ref, "#/components/schemas/", "", 1))
+				} else {
+					var sb strings.Builder
+					printSchema(doc, "", content.Schema, &sb, 1)
+					re := regexp.MustCompile(`\r?\n`)
+					v := re.ReplaceAllString(sb.String(), "<br>")
+					re = regexp.MustCompile(`\s`)
+					v = re.ReplaceAllString(v, "&nbsp;")
+					typeRef = "<code>" + v + "</code>"
+				}
 			}
 			fmt.Printf("| %s | %s | %s | %s |\n", k, cv, typeRef, resp.Description)
 		}
@@ -149,8 +172,11 @@ func printRequestBody(doc *models.Document, op *models.Operation) {
 	}
 	if doc.Model == models.CSwagger {
 	} else {
-		fmt.Println("### Request Body")
+		fmt.Println("\n### Request Body")
 		fmt.Println(op.RequestBody.Description)
+		if op.RequestBody.Description != "" {
+			fmt.Printf("\n")
+		}
 		headers := []string{"Content Type", "Data"}
 		fmt.Printf("\n| %s |\n", strings.Join(headers, " | "))
 		fmt.Printf("|%s|\n", strings.Join(util.Map(headers, func(x string) string { return "-" }), "-|-"))
