@@ -9,6 +9,8 @@ version or integrate with other documentation systems, like confluence. This
 project solves that by simply exporting the API into a markdown. From markdown,
 it is easier to convert to other formats using other tools.
 
+![Preview](https://github.com/tsureshkumar/my-docs/raw/master/images/simple-swagger-doc-screenshot.png)
+
 # How to run?
 
 You need to have the json version of the API.  You can download your API in json
